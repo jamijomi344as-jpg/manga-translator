@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Professional Manga & Manhwa translation and typesetting workspace — clean bubbles, OCR, translate, and typeset in one place.">
+  <title>MangaType Studio — Manga Typesetting Workspace</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Bangers&family=Comic+Neue:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Oswald:wght@400;700&family=Permanent+Marker&family=Anton&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Vendor (Fabric.js + jsPDF) -->
+  <script src="vendor/fabric.min.js"></script>
+  <script src="vendor/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ═══════════════════════════════════════════
+       TOP TOOLBAR
+  ════════════════════════════════════════════ -->
+  <header id="toolbar" role="banner">
+
+    <!-- Brand -->
+    <div class="toolbar-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      <h1>MangaType Studio</h1>
+      <span class="badge badge-accent">BETA</span>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <!-- File Actions -->
+    <div class="toolbar-group">
+      <label class="tool-btn" for="file-upload-input" title="Upload manga pages (PNG, JPG, WebP)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Upload Pages
+      </label>
+      <input type="file" id="file-upload-input" accept="image/*" multiple style="display:none" aria-label="Upload manga pages">
+
+      <button id="btn-save" class="tool-btn" title="Save snapshot">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save
+      </button>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <!-- Tool Modes -->
+    <div class="toolbar-group" role="toolbar" aria-label="Editing tools">
+      <button class="tool-btn active" data-tool="select" title="Select & move (V)" id="tool-select">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-7 1-4 7z"/></svg>
+        Select
+      </button>
+      <button class="tool-btn" data-tool="text" title="Add text box (T)" id="tool-text">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+        Text
+      </button>
+      <button class="tool-btn" data-tool="clean" title="Clean speech bubble (C)" id="tool-clean">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><line x1="9" y1="10" x2="15" y2="10"/></svg>
+        Clean Bubble
+      </button>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <!-- Edit Actions -->
+    <div class="toolbar-group">
+      <button id="btn-undo" class="tool-btn" title="Undo (Ctrl+Z)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>
+      </button>
+      <button id="btn-redo" class="tool-btn" title="Redo (Ctrl+Y)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>
+      </button>
+      <button id="btn-duplicate" class="tool-btn" title="Duplicate (Ctrl+D)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      </button>
+      <button id="btn-delete" class="tool-btn danger" title="Delete selected (Del)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+      <button id="btn-clear-text" class="tool-btn danger" title="Clear all text layers">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0 0"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+        Clear Text
+      </button>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <!-- Zoom Controls -->
+    <div class="toolbar-group">
+      <button id="btn-zoom-out" class="tool-btn" title="Zoom out">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+      <span id="zoom-display">100%</span>
+      <button id="btn-zoom-in" class="tool-btn" title="Zoom in">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+      <button id="btn-zoom-fit" class="tool-btn" title="Fit to window">Fit</button>
+      <button id="btn-zoom-100" class="tool-btn" title="100% zoom">100%</button>
+    </div>
+
+    <div class="toolbar-spacer"></div>
+
+    <!-- Page counter -->
+    <div class="page-indicator">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Page <span id="page-current">0</span> / <span id="page-total">0</span>
+    </div>
+
+    <!-- Quick export -->
+    <div class="toolbar-sep"></div>
+    <button class="tool-btn success" onclick="PanelManager.exportPNG()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export PNG
+    </button>
+    <button class="tool-btn warning" onclick="PanelManager.exportPDF()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      PDF
+    </button>
+
+  </header>
+
+  <!-- ═══════════════════════════════════════════
+       LEFT SIDEBAR — PAGES
+  ════════════════════════════════════════════ -->
+  <aside id="sidebar" role="complementary" aria-label="Pages">
+
+    <div class="sidebar-header">
+      <h2>Pages</h2>
+      <button class="tool-btn" onclick="document.getElementById('file-upload-input').click()" title="Add pages">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add
+      </button>
+    </div>
+
+    <div id="pages-list" aria-label="Page list" role="list"></div>
+
+    <div class="sidebar-drop-zone" id="sidebar-upload" role="button" tabindex="0" aria-label="Upload manga pages by clicking or dropping here">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:6px;opacity:0.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <div>Drop pages here</div>
+      <div style="color:var(--text-muted);font-size:10px;margin-top:2px">or click to browse</div>
+    </div>
+
+  </aside>
+
+  <!-- ═══════════════════════════════════════════
+       MAIN CANVAS AREA
+  ════════════════════════════════════════════ -->
+  <main id="canvas-area" role="main" aria-label="Editor canvas">
+
+    <!-- Empty state -->
+    <div id="canvas-empty">
+      <div class="empty-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </div>
+      <div class="empty-title">Your workspace is empty</div>
+      <div class="empty-sub">Upload raw manga pages to start translating and typesetting. Supports PNG, JPG, and WebP.</div>
+      <button class="upload-cta" id="canvas-upload-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Upload Manga Pages
+      </button>
+    </div>
+
+    <!-- Fabric.js Canvas -->
+    <div id="canvas-wrapper">
+      <canvas id="main-canvas" aria-label="Manga editor canvas"></canvas>
+    </div>
+
+    <!-- Selection overlay (for clean tool) -->
+    <div id="selection-overlay" aria-hidden="true"></div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       RIGHT PANEL — TRANSLATION & STYLE
+  ════════════════════════════════════════════ -->
+  <aside id="right-panel" role="complementary" aria-label="Properties panel">
+
+    <!-- Tab Navigation -->
+    <nav class="panel-tabs" role="tablist" aria-label="Panel tabs">
+      <button class="panel-tab active" data-panel="style" role="tab" aria-selected="true" id="tab-style">Style</button>
+      <button class="panel-tab" data-panel="ocr"   role="tab" aria-selected="false" id="tab-ocr">OCR & TL</button>
+      <button class="panel-tab" data-panel="layers" role="tab" aria-selected="false" id="tab-layers">Layers</button>
+      <button class="panel-tab" data-panel="export" role="tab" aria-selected="false" id="tab-export">Export</button>
+    </nav>
+
+    <!-- ── STYLE PANEL ─────────────────────────── -->
+    <section id="panel-style" class="panel-content active" role="tabpanel" aria-labelledby="tab-style">
+
+      <!-- Text preview -->
+      <div>
+        <p class="section-label">Preview</p>
+        <div id="text-preview" style="font-family:'Bangers';font-size:22px;color:#000;background:#fff;border-radius:6px;">Sample Text</div>
+      </div>
+
+      <!-- Font settings -->
+      <div class="style-card">
+        <p class="section-label">Font</p>
+
+        <div class="form-row">
+          <label for="font-family">Family</label>
+          <select id="font-family" class="form-select">
+            <option value="Bangers">Bangers (Comic)</option>
+            <option value="Comic Neue">Comic Neue</option>
+            <option value="Permanent Marker">Permanent Marker</option>
+            <option value="Anton">Anton</option>
+            <option value="Oswald">Oswald</option>
+            <option value="Noto Sans JP">Noto Sans JP</option>
+            <option value="Inter">Inter</option>
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Times New Roman">Times New Roman</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="font-size">Size</label>
+          <input type="range" id="font-size" min="8" max="72" value="22" step="1">
+          <span id="font-size-val" style="min-width:24px;text-align:right;color:var(--text-secondary);font-size:12px">22</span>
+        </div>
+
+        <div class="form-row">
+          <label>Style</label>
+          <div class="btn-group">
+            <button class="tgl-btn" id="btn-bold" title="Bold">B</button>
+            <button class="tgl-btn" id="btn-italic" title="Italic" style="font-style:italic">I</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Color settings -->
+      <div class="style-card">
+        <p class="section-label">Color</p>
+
+        <div class="form-row">
+          <label for="text-color">Fill</label>
+          <input type="color" id="text-color" value="#000000" title="Text fill color">
+          <span style="font-size:11px;color:var(--text-muted)">Text color</span>
+        </div>
+
+        <div class="form-row">
+          <label for="stroke-color">Stroke</label>
+          <input type="color" id="stroke-color" value="#ffffff" title="Text stroke/outline color">
+          <span style="font-size:11px;color:var(--text-muted)">Outline</span>
+        </div>
+
+        <div class="form-row">
+          <label for="stroke-width">Width</label>
+          <input type="range" id="stroke-width" min="0" max="8" value="0" step="1">
+          <span id="stroke-width-val" style="min-width:24px;text-align:right;color:var(--text-secondary);font-size:12px">0</span>
+        </div>
+      </div>
+
+      <!-- Alignment -->
+      <div class="style-card">
+        <p class="section-label">Alignment</p>
+        <div class="btn-group">
+          <button class="tgl-btn" data-align="left" title="Align left">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
+          </button>
+          <button class="tgl-btn active" data-align="center" title="Align center">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+          </button>
+          <button class="tgl-btn" data-align="right" title="Align right">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Help -->
+      <div class="style-card">
+        <p class="section-label">Keyboard Shortcuts</p>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div class="form-row"><code style="font-size:10px;background:var(--bg-elevated);padding:2px 5px;border-radius:3px;color:var(--accent-light)">T</code><span style="font-size:11px;color:var(--text-muted)">Text tool</span></div>
+          <div class="form-row"><code style="font-size:10px;background:var(--bg-elevated);padding:2px 5px;border-radius:3px;color:var(--accent-light)">V</code><span style="font-size:11px;color:var(--text-muted)">Select tool</span></div>
+          <div class="form-row"><code style="font-size:10px;background:var(--bg-elevated);padding:2px 5px;border-radius:3px;color:var(--accent-light)">Del</code><span style="font-size:11px;color:var(--text-muted)">Delete selected</span></div>
+          <div class="form-row"><code style="font-size:10px;background:var(--bg-elevated);padding:2px 5px;border-radius:3px;color:var(--accent-light)">Ctrl+D</code><span style="font-size:11px;color:var(--text-muted)">Duplicate</span></div>
+          <div class="form-row"><code style="font-size:10px;background:var(--bg-elevated);padding:2px 5px;border-radius:3px;color:var(--accent-light)">Arrows</code><span style="font-size:11px;color:var(--text-muted)">Nudge 1px</span></div>
+          <div class="form-row"><code style="font-size:10px;background:var(--bg-elevated);padding:2px 5px;border-radius:3px;color:var(--accent-light)">Scroll</code><span style="font-size:11px;color:var(--text-muted)">Zoom in/out</span></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ── OCR & TRANSLATION PANEL ─────────────── -->
+    <section id="panel-ocr" class="panel-content" role="tabpanel" aria-labelledby="tab-ocr">
+
+      <div>
+        <p class="section-label">Extract & Translate</p>
+        <div class="ocr-action-row">
+          <button id="btn-ocr-page" class="primary-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Extract Text (OCR)
+          </button>
+          <button id="btn-translate-all" class="secondary-btn" title="Auto-translate all extracted text">All →</button>
+        </div>
+        <p class="text-muted" style="margin-top:6px;line-height:1.5">Connects to PaddleOCR/EasyOCR on the backend. In demo mode, mock results are shown.</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Source / Target language -->
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="flex:1">
+          <p class="section-label">Source</p>
+          <select class="form-select" id="src-lang">
+            <option value="JA">Japanese (JA)</option>
+            <option value="KO">Korean (KO)</option>
+            <option value="ZH">Chinese (ZH)</option>
+            <option value="EN">English (EN)</option>
+          </select>
+        </div>
+        <div style="color:var(--text-muted);font-size:16px;margin-top:12px">→</div>
+        <div style="flex:1">
+          <p class="section-label">Target</p>
+          <select class="form-select" id="tgt-lang">
+            <option value="EN">English (EN)</option>
+            <option value="ID">Indonesian (ID)</option>
+            <option value="ES">Spanish (ES)</option>
+            <option value="PT">Portuguese (PT)</option>
+            <option value="FR">French (FR)</option>
+            <option value="DE">German (DE)</option>
+            <option value="RU">Russian (RU)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Results -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <p class="section-label" style="margin:0">Results</p>
+          <button id="btn-place-all" class="mini-btn accent">Place All</button>
+        </div>
+        <div id="ocr-results">
+          <p class="text-muted" style="text-align:center;padding:24px 0">Click "Extract Text" to detect speech bubbles<br>and extract their text.</p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ── LAYERS PANEL ───────────────────────── -->
+    <section id="panel-layers" class="panel-content" role="tabpanel" aria-labelledby="tab-layers">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <p class="section-label" style="margin:0">Text Layers</p>
+        <button class="mini-btn" onclick="CanvasEngine.deleteSelected()" title="Delete selected layer">Delete</button>
+      </div>
+
+      <div id="layers-list">
+        <p class="text-muted" style="text-align:center;padding:24px 0">No text layers yet.<br>Use the Text tool to add some.</p>
+      </div>
+
+    </section>
+
+    <!-- ── EXPORT PANEL ───────────────────────── -->
+    <section id="panel-export" class="panel-content" role="tabpanel" aria-labelledby="tab-export">
+
+      <p class="section-label">Export Options</p>
+
+      <!-- PNG -->
+      <div class="export-option" id="export-png" role="button" tabindex="0" aria-label="Export as PNG">
+        <div class="export-icon png">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <div class="export-info">
+          <h3>Export PNG</h3>
+          <p>High-quality lossless image of the current page.</p>
+        </div>
+      </div>
+
+      <!-- PDF -->
+      <div class="export-option" id="export-pdf" role="button" tabindex="0" aria-label="Export as PDF">
+        <div class="export-icon pdf">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="export-info">
+          <h3>Export PDF</h3>
+          <p>Compile all pages into a single PDF document.</p>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Telegram -->
+      <p class="section-label">Telegram Distribution</p>
+      <div class="tg-config">
+        <div class="form-row">
+          <label for="tg-bot-token" style="min-width:70px">Bot Token</label>
+          <input type="password" id="tg-bot-token" class="form-input" placeholder="123456:ABC-DEF…" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <label for="tg-channel" style="min-width:70px">Channel</label>
+          <input type="text" id="tg-channel" class="form-input" placeholder="@dunxuauniverse">
+        </div>
+        <div class="form-row">
+          <label for="tg-caption" style="min-width:70px">Caption</label>
+          <input type="text" id="tg-caption" class="form-input" placeholder="Chapter 42 — Release!">
+        </div>
+        <div id="export-tg" class="export-option" role="button" tabindex="0" aria-label="Publish to Telegram" style="margin-top:4px;">
+          <div class="export-icon tg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.94z"/></svg>
+          </div>
+          <div class="export-info">
+            <h3>Publish to Telegram</h3>
+            <p>Forward all pages to your channel via Bot API.</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </aside>
+
+</div><!-- /#app -->
+
+<!-- ═══════════════════════════════════════════
+     STATUS BAR
+════════════════════════════════════════════ -->
+<div id="status-bar" role="status" aria-live="polite">
+  <div class="stat">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    Objects: <span id="stat-objects">0</span>
+  </div>
+  <div class="stat">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+    X,Y: <span id="stat-coords">—</span>
+  </div>
+  <span id="status-msg"></span>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT MODULES
+════════════════════════════════════════════ -->
+<script src="js/api.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/panels.js"></script>
+<script src="js/tools.js"></script>
+<script src="js/app.js"></script>
+
+<!-- Keyboard shortcuts for tool switching -->
+<script>
+document.addEventListener('keydown', (e) => {
+  if (document.activeElement?.tagName === 'INPUT' ||
+      document.activeElement?.tagName === 'TEXTAREA' ||
+      document.activeElement?.isContentEditable) return;
+
+  switch(e.key.toLowerCase()) {
+    case 'v': Tools?.setTool('select'); break;
+    case 't': Tools?.setTool('text');   break;
+    case 'c': if (!e.ctrlKey && !e.metaKey) Tools?.setTool('clean'); break;
+  }
+});
+</script>
+
+</body>
+</html>
+
