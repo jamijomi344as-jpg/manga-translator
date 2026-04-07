@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-multipart
+paddlepaddle
+paddleocr
+deep-translator
+pydantic
+opencv-python-headless
+pillow
+requests
+python-telegram-bot
