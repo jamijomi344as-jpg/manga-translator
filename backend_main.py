@@ -168,24 +168,18 @@ async def run_ocr(payload: OcrRequest):
 
     try:
         ocr = get_ocr_engine()
-        result = ocr.predict(img_path)
+        result = ocr.ocr(img_path, cls=True)
     except Exception as exc:
         logger.error(f"OCR error: {exc}")
         raise HTTPException(status_code=500, detail=f"OCR failed: {exc}")
 
     regions = []
     try:
-        # PaddleOCR 2.x result format: list of page results
-        ocr_result = result[0] if result else {}
-        rec_texts = ocr_result.get("rec_texts", [])
-        rec_scores = ocr_result.get("rec_scores", [])
-        rec_polys  = ocr_result.get("rec_polys",  [])
-
-        for idx, (text, score, poly) in enumerate(zip(rec_texts, rec_scores, rec_polys)):
+        for idx, line in enumerate(result[0] or []):
+            poly, (text, score) = line
             if not text.strip():
                 continue
             translated = translate_text(text, payload.source_lang, payload.target_lang)
-            # poly is [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
             xs = [p[0] for p in poly]
             ys = [p[1] for p in poly]
             regions.append({
