@@ -160,7 +160,6 @@ async def upload_image(file: UploadFile = File(...)):
 @app.post("/api/ocr")
 async def run_ocr(payload: OcrRequest):
     """Run PaddleOCR on a stored image and return translated text regions."""
-    # Find the file
     matches = list(UPLOAD_DIR.glob(f"{payload.image_id}.*"))
     if not matches:
         raise HTTPException(status_code=404, detail="Image not found.")
@@ -175,11 +174,34 @@ async def run_ocr(payload: OcrRequest):
 
     regions = []
     try:
-        for idx, line in enumerate(result[0] or []):
+        ocr_result = result[0] if result and len(result) > 0 else []
+        if not ocr_result:
+            return JSONResponse({"image_id": payload.image_id, "regions": []})
+
+        # 1-QADAM: Barcha matnlarni bittada yig'ib olish
+        texts = [line[1][0] for line in ocr_result if line[1][0].strip()]
+
+        # 2-QADAM: Matnlarni BITTADA tarjima qilish (Juda tez ishlaydi!)
+        translated_texts = []
+        if texts:
+            try:
+                src = "auto" if payload.source_lang == "auto" else payload.source_lang
+                translator = GoogleTranslator(source=src, target=payload.target_lang)
+                translated_texts = translator.translate_batch(texts)
+            except Exception as e:
+                logger.warning(f"Batch translation failed: {e}")
+                translated_texts = texts  # xato bo'lsa originalni o'zini qoldiradi
+
+        # 3-QADAM: Natijalarni frontend uchun tayyorlash
+        text_idx = 0
+        for idx, line in enumerate(ocr_result):
             poly, (text, score) = line
             if not text.strip():
                 continue
-            translated = translate_text(text, payload.source_lang, payload.target_lang)
+            
+            translated = translated_texts[text_idx] if text_idx < len(translated_texts) else text
+            text_idx += 1
+
             xs = [p[0] for p in poly]
             ys = [p[1] for p in poly]
             regions.append({
